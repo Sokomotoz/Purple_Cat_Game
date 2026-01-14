@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Purple Cat vs Skeletons</title>
+  <style>
+    :root { --bg: #0b0f18; --fg: #e9eefc; --accent: #7c5cff; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: radial-gradient(1200px 700px at 50% 20%, #1a2340 0%, var(--bg) 55%, #05070c 100%);
+      overflow: hidden;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--fg);
+      user-select: none;
+      touch-action: none;
+    }
+
+    #hud {
+      position: fixed;
+      top: 12px; left: 12px; right: 12px;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+    #scoreBox {
+      background: rgba(0,0,0,.35);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 10px 14px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+    #scoreBox span { color: #fff; text-shadow: 0 0 18px rgba(124,92,255,.55); }
+    #musicVol {
+      pointer-events: auto;
+      width: 170px;
+      accent-color: var(--accent);
+    }
+    #musicBtn {
+      pointer-events: auto;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(124,92,255,.18);
+      color: var(--fg);
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    #musicBtn:active { transform: translateY(1px); }
+
+    #game { position: fixed; inset: 0; }
+
+    .entity {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      will-change: transform, left, top;
+    }
+
+    #cat {
+      width: 170px;
+      height: 170px;
+      border-radius: 16px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.45);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      touch-action: none;
+      cursor: grab;
+    }
+    #cat:active { cursor: grabbing; }
+
+    /* Чтобы картинка не "тянулась" как файл */
+    #cat img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display:block;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none; /* события ловим на контейнере #cat */
+    }
+
+    .skeleton {
+      width: 82px;
+      height: 82px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-size: 46px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 14px 28px rgba(0,0,0,.35);
+    }
+
+    .hit { animation: pop .14s ease-out forwards; }
+    @keyframes pop { to { transform: translate(-50%, -50%) scale(1.25); opacity: 0; } }
+
+    #hint {
+      position: fixed;
+      bottom: 10px;
+      left: 0; right: 0;
+      text-align: center;
+      opacity: .7;
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    #winOverlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.55);
+      z-index: 50;
+      text-align: center;
+      padding: 20px;
+    }
+    #winCard {
+      max-width: 720px;
+      background: rgba(10,14,24,.85);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 16px;
+      padding: 18px 18px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.55);
+      backdrop-filter: blur(8px);
+    }
+    #winTitle { font-size: 26px; font-weight: 800; margin-bottom: 10px; }
+    #winText { font-size: 16px; line-height: 1.4; }
+    #restartBtn {
+      margin-top: 14px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(124,92,255,.25);
+      color: var(--fg);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <div id="scoreBox">
+      Очки: <span id="score">0</span>
+      <span style="opacity:.75; font-weight:700;">Музыка</span>
+      <input id="musicVol" type="range" min="0" max="1" step="0.01" value="0.25">
+      <button id="musicBtn" type="button">Выкл</button>
+    </div>
+  </div>
+
+  <div id="game">
+    <div id="cat" class="entity">
+      <!-- draggable="false" дополнительно запрещает перетаскивание картинки [web:43] -->
+      <img src="cat.png" alt="Кот" draggable="false">
+    </div>
+  </div>
+
+  <div id="hint">Зажми ЛКМ (или палец) на коте и веди.</div>
+
+  <div id="winOverlay">
+    <div id="winCard">
+      <div id="winTitle">Вы выиграли!</div>
+      <div id="winText">Скидка 10 % на следующий заказ по промокоду <b>Purple_cat</b></div>
+      <button id="restartBtn" type="button">Начать заново</button>
+    </div>
+  </div>
+
+  <audio id="bgm" src="music.mp3" loop preload="auto"></audio>
+
+<script>
+(() => {
+  const game = document.getElementById('game');
+  const cat = document.getElementById('cat');
+  const scoreEl = document.getElementById('score');
+
+  const bgm = document.getElementById('bgm');
+  const musicVol = document.getElementById('musicVol');
+  const musicBtn = document.getElementById('musicBtn');
+
+  const winOverlay = document.getElementById('winOverlay');
+  const restartBtn = document.getElementById('restartBtn');
+
+  // --- Настройки
+  const CFG = {
+    spawnEveryMs: 700,
+    skeletonSpeed: 120,
+    maxSkeletons: 14,
+    catSize: 170,
+    hitRadius: 70,
+    winScore: 1000
+  };
+
+  // --- Состояние
+  let score = 0;
+  let gameOver = false;
+  let spawnTimer = null;
+  const skeletons = new Set();
+
+  let catPos = { x: window.innerWidth/2, y: window.innerHeight/2 };
+
+  // drag только пока удерживается кнопка/палец
+  let dragging = false;
+  let activePointerId = null;
+  let dragOffset = { x: 0, y: 0 };
+
+  // --- Запрет стандартного drag’n’drop изображения/элемента (чтобы не было "захвата")
+  cat.addEventListener('dragstart', (e) => e.preventDefault());
+
+  // --- SFX (удар меча)
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  const sfxCtx = new AudioCtx();
+  let sfxUnlocked = false;
+
+  function unlockSfx() {
+    if (sfxUnlocked) return;
+    sfxCtx.resume().then(() => sfxUnlocked = true).catch(()=>{});
+  }
+
+  function swordHitSound() {
+    if (!sfxUnlocked) return;
+    const now = sfxCtx.currentTime;
+
+    const gain = sfxCtx.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.35, now + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+
+    const bufferSize = Math.floor(sfxCtx.sampleRate * 0.12);
+    const buffer = sfxCtx.createBuffer(1, bufferSize, sfxCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+
+    const noise = sfxCtx.createBufferSource();
+    noise.buffer = buffer;
+
+    const band = sfxCtx.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.setValueAtTime(2200, now);
+    band.Q.setValueAtTime(3.5, now);
+
+    const osc = sfxCtx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(780, now);
+    osc.frequency.exponentialRampToValueAtTime(420, now + 0.09);
+
+    noise.connect(band).connect(gain).connect(sfxCtx.destination);
+    osc.connect(gain).connect(sfxCtx.destination);
+
+    noise.start(now);
+    osc.start(now);
+    noise.stop(now + 0.13);
+    osc.stop(now + 0.13);
+  }
+
+  // --- Музыка по умолчанию "включена"
+  // Но браузеры часто блокируют autoplay со звуком без жеста пользователя. Поэтому:
+  // 1) считаем музыку включенной логически
+  // 2) реально запускаем при первом клике/тапе по странице [web:20]
+  let musicEnabled = true;
+
+  bgm.volume = Number(musicVol.value);
+  musicVol.addEventListener('input', () => bgm.volume = Number(musicVol.value));
+
+  function syncMusicButton() {
+    musicBtn.textContent = musicEnabled ? 'Выкл' : 'Вкл';
+  }
+
+  async function applyMusicState() {
+    if (!musicEnabled) {
+      bgm.pause();
+      return;
+    }
+    try {
+      await bgm.play(); // может быть заблокировано до жеста пользователя [web:20]
+    } catch (e) {}
+  }
+
+  musicBtn.addEventListener('click', async () => {
+    musicEnabled = !musicEnabled;
+    syncMusicButton();
+    await applyMusicState();
+  });
+
+  // автозапуск "как только можно": на первый жест пользователя
+  window.addEventListener('pointerdown', async () => {
+    // попытаться стартовать музыку, если она включена [web:20]
+    await applyMusicState();
+  }, { once: true });
+
+  // --- Утилиты
+  function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+  function distance(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+  function setCatPos(x, y) {
+    const pad = CFG.catSize / 2;
+    catPos.x = clamp(x, pad, window.innerWidth - pad);
+    catPos.y = clamp(y, pad, window.innerHeight - pad);
+    cat.style.left = catPos.x + 'px';
+    cat.style.top  = catPos.y + 'px';
+  }
+
+  // --- Скелеты
+  function spawnSkeleton() {
+    if (gameOver) return;
+    if (skeletons.size >= CFG.maxSkeletons) return;
+
+    const el = document.createElement('div');
+    el.className = 'entity skeleton';
+    el.textContent = '💀';
+    game.appendChild(el);
+
+    const side = Math.floor(Math.random() * 4);
+    const margin = 40;
+
+    let x, y;
+    if (side === 0) { x = Math.random()*window.innerWidth; y = -margin; }
+    if (side === 1) { x = window.innerWidth + margin; y = Math.random()*window.innerHeight; }
+    if (side === 2) { x = Math.random()*window.innerWidth; y = window.innerHeight + margin; }
+    if (side === 3) { x = -margin; y = Math.random()*window.innerHeight; }
+
+    const sk = { el, pos: { x, y }, dead: false };
+    el.style.left = x + 'px';
+    el.style.top  = y + 'px';
+    skeletons.add(sk);
+  }
+
+  function showWin() {
+    gameOver = true;
+    winOverlay.style.display = 'flex';
+    if (spawnTimer) clearInterval(spawnTimer);
+  }
+
+  function killSkeleton(sk) {
+    if (sk.dead || gameOver) return;
+    sk.dead = true;
+
+    sk.el.classList.add('hit');
+    swordHitSound();
+
+    score += 1;
+    scoreEl.textContent = score;
+
+    if (score >= CFG.winScore) showWin();
+
+    setTimeout(() => {
+      sk.el.remove();
+      skeletons.delete(sk);
+    }, 160);
+  }
+
+  // --- Игровой цикл
+  let lastT = performance.now();
+  function tick(t) {
+    const dt = (t - lastT) / 1000;
+    lastT = t;
+
+    if (!gameOver) {
+      for (const sk of skeletons) {
+        if (sk.dead) continue;
+
+        const dirX = catPos.x - sk.pos.x;
+        const dirY = catPos.y - sk.pos.y;
+        const len = Math.hypot(dirX, dirY) || 1;
+
+        sk.pos.x += (dirX / len) * CFG.skeletonSpeed * dt;
+        sk.pos.y += (dirY / len) * CFG.skeletonSpeed * dt;
+
+        sk.el.style.left = sk.pos.x + 'px';
+        sk.el.style.top  = sk.pos.y + 'px';
+
+        if (distance(sk.pos, catPos) < CFG.hitRadius) killSkeleton(sk);
+      }
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  // --- Перетаскивание: только пока удерживается ЛКМ/палец
+  function pointerDown(e) {
+    if (gameOver) return;
+
+    unlockSfx();
+
+    // Для мыши: только ЛКМ (button === 0). Для тача button обычно 0 — ок.
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+    dragging = true;
+    activePointerId = e.pointerId;
+
+    const rect = cat.getBoundingClientRect();
+    dragOffset.x = e.clientX - (rect.left + rect.width/2);
+    dragOffset.y = e.clientY - (rect.top  + rect.height/2);
+
+    cat.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  }
+
+  function pointerMove(e) {
+    if (!dragging || gameOver) return;
+    if (e.pointerId !== activePointerId) return;
+
+    // Для мыши дополнительно проверяем: кнопка реально зажата (e.buttons & 1)
+    if (e.pointerType === 'mouse' && (e.buttons & 1) === 0) {
+      dragging = false;
+      activePointerId = null;
+      return;
+    }
+
+    setCatPos(e.clientX - dragOffset.x, e.clientY - dragOffset.y);
+  }
+
+  function pointerUp(e) {
+    if (e.pointerId !== activePointerId) return;
+    dragging = false;
+    activePointerId = null;
+    try { cat.releasePointerCapture(e.pointerId); } catch (_) {}
+  }
+
+  cat.addEventListener('pointerdown', pointerDown);
+  window.addEventListener('pointermove', pointerMove);
+  window.addEventListener('pointerup', pointerUp);
+  window.addEventListener('pointercancel', pointerUp);
+
+  // --- Рестарт
+  function resetGame() {
+    for (const sk of skeletons) sk.el.remove();
+    skeletons.clear();
+
+    score = 0;
+    scoreEl.textContent = score;
+
+    gameOver = false;
+    winOverlay.style.display = 'none';
+
+    setCatPos(window.innerWidth/2, window.innerHeight/2);
+
+    if (spawnTimer) clearInterval(spawnTimer);
+    spawnTimer = setInterval(spawnSkeleton, CFG.spawnEveryMs);
+  }
+
+  restartBtn.addEventListener('click', resetGame);
+
+  // --- Ресайз
+  window.addEventListener('resize', () => setCatPos(catPos.x, catPos.y));
+
+  // --- Старт
+  setCatPos(window.innerWidth/2, window.innerHeight/2);
+  spawnTimer = setInterval(spawnSkeleton, CFG.spawnEveryMs);
+  requestAnimationFrame(tick);
+
+  // считаем, что музыка включена по умолчанию
+  syncMusicButton();
+})();
+</script>
+</body>
+</html>
