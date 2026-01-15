@@ -28,8 +28,8 @@
     skeletonSpeed: 120,
     maxSkeletons: 14,
 
-    catSize: 130,
-    catRadius: 38,
+    catSize: 96,
+    catRadius: 28,
     skeletonRadius: 38,
 
     shieldRadius: 86,
