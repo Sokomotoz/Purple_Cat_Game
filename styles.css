@@ -1,0 +1,196 @@
+:root { --bg:#0b0f18; --fg:#e9eefc; --accent:#7c5cff; --danger:#ff4d6d; --ok:#55f2a6; }
+html, body { height:100%; margin:0; }
+body{
+  background: radial-gradient(1200px 700px at 50% 20%, #1a2340 0%, var(--bg) 55%, #05070c 100%);
+  overflow:hidden;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--fg);
+  user-select:none;
+  touch-action:none;
+}
+
+#hud{
+  position:fixed; top:12px; left:12px; right:12px;
+  display:flex; justify-content:center; gap:10px; flex-wrap:wrap;
+  pointer-events:none; z-index:10;
+}
+.panel{
+  background: rgba(0,0,0,.35);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: 10px 14px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events:none;
+}
+.panel span{ color:#fff; text-shadow: 0 0 18px rgba(124,92,255,.55); }
+
+#hpBar,#bossBar{
+  width: 180px; height: 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.14);
+  overflow:hidden;
+}
+#hpFill,#bossFill{ height:100%; width:100%; transform-origin:left center; }
+#hpFill{ background: linear-gradient(90deg, var(--ok), #b6ffea); }
+#bossFill{ background: linear-gradient(90deg, #ffb703, #ff006e); }
+
+#musicVol{ pointer-events:auto; width: 170px; accent-color: var(--accent); }
+#musicBtn{
+  pointer-events:auto;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(124,92,255,.18);
+  color: var(--fg);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+/*
+#adminScoreBtn{
+  pointer-events:auto;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.10);
+  color: var(--fg);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+*/
+#game{ position:fixed; inset:0; }
+
+.entity{ position:absolute; transform: translate(-50%,-50%); will-change:left,top,transform; }
+#catWrap{ width: 130px; height: 130px; border-radius: 16px; touch-action:none; cursor:grab; }
+#catWrap:active{ cursor:grabbing; }
+#cat{
+  width: 130px; height: 130px; border-radius: 16px; overflow:hidden;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05);
+  box-shadow: 0 18px 40px rgba(0,0,0,.45);
+}
+#cat img{
+  width:100%; height:100%; object-fit:cover; display:block;
+  user-select:none; -webkit-user-drag:none; pointer-events:none;
+  transform: scale(0.92);
+  transform-origin: center;
+}
+
+/* Shield */
+#shieldOrbit{ position:absolute; left:50%; top:50%; width:0; height:0; transform: translate(-50%,-50%); pointer-events:none; }
+#shieldArm{ position:absolute; left:0; top:0; width:0; height:0; transform-origin:0 0; will-change: transform; }
+#shield{
+  position:absolute;
+  left: 86px; top: 0px;
+  width: 140px; height: 22px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 50%, rgba(255,255,255,.9), rgba(124,92,255,.65));
+  border: 1px solid rgba(255,255,255,.25);
+  box-shadow: 0 0 18px rgba(124,92,255,.55), 0 0 40px rgba(124,92,255,.25);
+  transform: translate(-50%,-50%);
+}
+
+.skeleton{
+  width: 82px; height: 82px;
+  border-radius: 14px;
+  display:grid; place-items:center;
+  font-size: 46px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 14px 28px rgba(0,0,0,.35);
+}
+.skeleton.green{
+  box-shadow: 0 0 22px rgba(85,242,166,.35), 0 14px 28px rgba(0,0,0,.35);
+  border-color: rgba(85,242,166,.45);
+}
+
+.boss{
+  width: 120px; height: 120px;
+  border-radius: 18px;
+  display:grid; place-items:center;
+  font-size: 62px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 18px 40px rgba(0,0,0,.45);
+}
+.boss.car { font-size: 58px; }
+
+.proj{
+  width: 18px; height: 18px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, #fff, #35b6ff);
+  border: 1px solid rgba(255,255,255,.25);
+  box-shadow: 0 0 18px rgba(53,182,255,.55);
+}
+
+.bomb{
+  width: 34px; height: 34px;
+  border-radius: 12px;
+  display:grid; place-items:center;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.18);
+  box-shadow: 0 10px 24px rgba(0,0,0,.35);
+  font-size: 20px;
+}
+.bomb.exploding{ animation: boom .18s ease-out forwards; }
+@keyframes boom{ to { transform: translate(-50%,-50%) scale(1.6); opacity: 0; } }
+
+.hit{ animation: pop .14s ease-out forwards; }
+@keyframes pop { to { transform: translate(-50%,-50%) scale(1.25); opacity: 0; } }
+
+#hint{ position:fixed; bottom:10px; left:0; right:0; text-align:center; opacity:.7; font-size:12px; pointer-events:none; z-index:10; }
+
+#winOverlay{
+  position: fixed; inset:0; display:none; align-items:center; justify-content:center;
+  background: rgba(0,0,0,.55); z-index:50; text-align:center; padding:20px;
+}
+#winCard{
+  max-width: 720px;
+  background: rgba(10,14,24,.85);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 16px;
+  padding: 18px 18px;
+  box-shadow: 0 18px 60px rgba(0,0,0,.55);
+  backdrop-filter: blur(8px);
+}
+#winTitle{ font-size:26px; font-weight:800; margin-bottom:10px; }
+#winText{ font-size:16px; line-height:1.4; }
+#restartBtn{
+  margin-top:14px;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(124,92,255,.25);
+  color: var(--fg);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+#loseOverlay{
+  position: fixed; inset:0; display:none; align-items:center; justify-content:center;
+  background: rgba(0,0,0,.55); z-index:60; text-align:center; padding:20px;
+}
+#loseCard{
+  max-width: 520px;
+  background: rgba(10,14,24,.85);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 16px;
+  padding: 18px 18px;
+  box-shadow: 0 18px 60px rgba(0,0,0,.55);
+  backdrop-filter: blur(8px);
+}
+#loseTitle{ font-size:26px; font-weight:800; margin-bottom:12px; }
+#loseRestartBtn{
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(124,92,255,.25);
+  color: var(--fg);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
